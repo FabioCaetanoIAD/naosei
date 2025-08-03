@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tour Virtual</title>
+  <script src="https://www.marzipano.net/demos/vendor/es5-shim.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/eventShim.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/classList.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/requestAnimationFrame.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/bowser.min.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/screenfull.min.js"></script>
+  <script src="https://www.marzipano.net/demos/vendor/marzipano.js"></script>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    #pano { width: 100%; height: 100%; }
+    .hotspot { position: absolute; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div id="pano"></div>
+<script>
+  var viewer = new Marzipano.Viewer(document.getElementById('pano'));
+
+  var scenesData = [
+    {
+      id: "sala",
+      name: "Sala",
+      imageUrl: "images/sala.jpg",
+      nextScene: "cozinha",
+      hotspotText: "Ir para Cozinha"
+    },
+    {
+      id: "cozinha",
+      name: "Cozinha",
+      imageUrl: "images/cozinha.jpg",
+      nextScene: "sala",
+      hotspotText: "Voltar para Sala"
+    }
+  ];
+
+  var scenes = {};
+  scenesData.forEach(function(data) {
+    var source = Marzipano.ImageUrlSource.fromString(data.imageUrl);
+    var geometry = new Marzipano.EquirectGeometry([{ width: 4000 }]);
+    var limiter = Marzipano.util.compose(
+      Marzipano.RectilinearView.limit.traditional(1024, 120*Math.PI/180),
+      Marzipano.RectilinearView.limit.vfov(30*Math.PI/180, 100*Math.PI/180)
+    );
+    var view = new Marzipano.RectilinearView(null, limiter);
+    var scene = viewer.createScene({
+      source: source,
+      geometry: geometry,
+      view: view,
+      pinFirstLevel: true
+    });
+    scenes[data.id] = { scene: scene, data: data };
+  });
+
+  function switchScene(id) {
+    var s = scenes[id];
+    s.scene.switchTo();
+    addHotspot(s.data);
+  }
+
+  function addHotspot(data) {
+    var hotspot = document.createElement('div');
+    hotspot.className = 'hotspot';
+    hotspot.innerText = data.hotspotText;
+    hotspot.style.top = "50%";
+    hotspot.style.left = "50%";
+    hotspot.onclick = function() { switchScene(data.nextScene); };
+    var panoEl = document.getElementById('pano');
+    panoEl.innerHTML = "";
+    panoEl.appendChild(hotspot);
+  }
+
+  switchScene("sala");
+</script>
+</body>
+</html>
